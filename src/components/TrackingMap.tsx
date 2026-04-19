@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Polyline, CircleMarker } from "react-leaflet";
+import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -17,33 +17,41 @@ interface TrackingMapProps {
   className?: string;
 }
 
-// Lagos default centers
-const LAGOS_CENTER: [number, number] = [6.5244, 3.3792];
-
 export const TrackingMap = ({
-  pickup = [6.5095, 3.3711], // Yaba area
-  dropoff = [6.4474, 3.4731], // Lekki area
-  rider = [6.4842, 3.4116], // Third Mainland Bridge area
+  pickup = [6.5095, 3.3711],
+  dropoff = [6.4474, 3.4731],
+  rider = [6.4842, 3.4116],
   className,
 }: TrackingMapProps) => {
-  return (
-    <div className={className}>
-      <MapContainer
-        center={rider || LAGOS_CENTER}
-        zoom={12}
-        scrollWheelZoom={false}
-        zoomControl={false}
-        className="h-full w-full"
-      >
-        <TileLayer
-          attribution='&copy; OpenStreetMap'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Polyline positions={[pickup, rider, dropoff]} pathOptions={{ color: "#0a0a0a", weight: 4, opacity: 0.85 }} />
-        <Marker position={pickup} />
-        <Marker position={dropoff} />
-        <CircleMarker center={rider} radius={9} pathOptions={{ color: "#a3e635", fillColor: "#a3e635", fillOpacity: 1 }} />
-      </MapContainer>
-    </div>
-  );
+  const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<L.Map | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current || mapRef.current) return;
+
+    const map = L.map(containerRef.current, {
+      center: rider,
+      zoom: 12,
+      scrollWheelZoom: false,
+      zoomControl: false,
+    });
+    mapRef.current = map;
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap",
+    }).addTo(map);
+
+    L.polyline([pickup, rider, dropoff], { color: "#0a0a0a", weight: 4, opacity: 0.85 }).addTo(map);
+    L.marker(pickup).addTo(map);
+    L.marker(dropoff).addTo(map);
+    L.circleMarker(rider, { radius: 9, color: "#a3e635", fillColor: "#a3e635", fillOpacity: 1 }).addTo(map);
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return <div ref={containerRef} className={className} />;
 };
