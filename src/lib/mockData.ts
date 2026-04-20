@@ -14,6 +14,8 @@ export interface Route {
   pricePerPackage: number; // NGN
   vehicle: "Bike" | "Keke" | "Van";
   etaMinutes: number;
+  minSlotsToStart: number;
+  status: "scheduled" | "ongoing" | "completed";
 }
 
 export interface Delivery {
