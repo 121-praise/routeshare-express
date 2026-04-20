@@ -48,8 +48,13 @@ const RiderRoute = () => {
       </div>
 
       <div className="sticky bottom-0 left-0 right-0 bg-background border-t border-border screen-pad py-4">
+        {route.taken < route.minSlotsToStart ? (
+          <div className="rounded-2xl bg-warning/15 border border-warning/30 p-3 text-xs text-center mb-2">
+            Need {route.minSlotsToStart - route.taken} more paid package(s) to unlock auto-start. You can still start anytime.
+          </div>
+        ) : null}
         <Link
-          to={`/rider/otp/${route.id}`}
+          to={`/rider/broadcast/${route.id}`}
           className="w-full flex items-center justify-center gap-2 rounded-2xl bg-accent text-accent-foreground py-4 font-bold"
         >
           <Play className="h-4 w-4 fill-current" /> Start trip

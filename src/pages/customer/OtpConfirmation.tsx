@@ -56,8 +56,14 @@ const OtpConfirmation = () => {
 
       <div className="sticky bottom-0 left-0 right-0 bg-background border-t border-border screen-pad py-4 space-y-2">
         <Link
+          to="/customer/broadcast/r1"
+          className="block w-full text-center rounded-2xl bg-accent text-accent-foreground py-4 font-bold"
+        >
+          Wait for rider updates
+        </Link>
+        <Link
           to="/customer/track/d-r1"
-          className="block w-full text-center rounded-2xl bg-primary text-primary-foreground py-4 font-bold"
+          className="block w-full text-center rounded-2xl bg-primary text-primary-foreground py-3 font-semibold text-sm"
         >
           Track delivery
         </Link>

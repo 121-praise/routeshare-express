@@ -15,6 +15,7 @@ import OtpConfirmation from "./pages/customer/OtpConfirmation";
 import LiveTracking from "./pages/customer/LiveTracking";
 import DeliveryComplete from "./pages/customer/DeliveryComplete";
 import CustomerHistory from "./pages/customer/CustomerHistory";
+import CustomerBroadcast from "./pages/customer/CustomerBroadcast";
 import RiderHome from "./pages/rider/RiderHome";
 import CreateRoute from "./pages/rider/CreateRoute";
 import RiderRoute from "./pages/rider/RiderRoute";
@@ -22,6 +23,8 @@ import RiderOtp from "./pages/rider/RiderOtp";
 import Broadcast from "./pages/rider/Broadcast";
 import Earnings from "./pages/rider/Earnings";
 import Admin from "./pages/admin/Admin";
+import AdminLogin from "./pages/admin/AdminLogin";
+import { AdminGuard } from "./pages/admin/AdminGuard";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +48,7 @@ const App = () => (
           <Route path="/customer/track/:id" element={<LiveTracking />} />
           <Route path="/customer/complete/:id" element={<DeliveryComplete />} />
           <Route path="/customer/history" element={<CustomerHistory />} />
+          <Route path="/customer/broadcast/:id" element={<CustomerBroadcast />} />
           <Route path="/customer/profile" element={<Profile role="customer" />} />
 
           {/* Rider */}
@@ -57,7 +61,8 @@ const App = () => (
           <Route path="/rider/profile" element={<Profile role="rider" />} />
 
           {/* Admin */}
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminGuard><Admin /></AdminGuard>} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -14,6 +14,8 @@ export interface Route {
   pricePerPackage: number; // NGN
   vehicle: "Bike" | "Keke" | "Van";
   etaMinutes: number;
+  minSlotsToStart: number;
+  status: "scheduled" | "ongoing" | "completed";
 }
 
 export interface Delivery {
@@ -54,6 +56,8 @@ export const mockRoutes: Route[] = [
     pricePerPackage: 1800,
     vehicle: "Bike",
     etaMinutes: 55,
+    minSlotsToStart: 3,
+    status: "ongoing",
   },
   {
     id: "r2",
@@ -69,6 +73,8 @@ export const mockRoutes: Route[] = [
     pricePerPackage: 2200,
     vehicle: "Keke",
     etaMinutes: 70,
+    minSlotsToStart: 4,
+    status: "scheduled",
   },
   {
     id: "r3",
@@ -84,6 +90,8 @@ export const mockRoutes: Route[] = [
     pricePerPackage: 2500,
     vehicle: "Van",
     etaMinutes: 90,
+    minSlotsToStart: 5,
+    status: "scheduled",
   },
   {
     id: "r4",
@@ -99,6 +107,8 @@ export const mockRoutes: Route[] = [
     pricePerPackage: 1500,
     vehicle: "Bike",
     etaMinutes: 45,
+    minSlotsToStart: 3,
+    status: "scheduled",
   },
 ];
 
