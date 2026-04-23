@@ -1,13 +1,18 @@
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { ScreenHeader } from "@/components/ScreenHeader";
+import { fetchRequest, RequestRow } from "@/lib/api";
 import { CheckCircle2, Copy, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const OtpConfirmation = () => {
-  const otp = "4821";
+  const { id } = useParams();
+  const [req, setReq] = useState<RequestRow | null>(null);
   const [copied, setCopied] = useState(false);
 
+  useEffect(() => { if (id) fetchRequest(id).then(setReq); }, [id]);
+
+  const otp = req?.otp ?? "----";
   const copy = () => {
     navigator.clipboard.writeText(otp);
     setCopied(true);
@@ -35,15 +40,10 @@ const OtpConfirmation = () => {
           <p className="text-xs uppercase tracking-widest text-muted-foreground font-semibold">Your OTP</p>
           <div className="mt-3 grid grid-cols-4 gap-3">
             {otp.split("").map((d, i) => (
-              <div key={i} className="otp-digit aspect-square text-4xl">
-                {d}
-              </div>
+              <div key={i} className="otp-digit aspect-square text-4xl">{d}</div>
             ))}
           </div>
-          <button
-            onClick={copy}
-            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-foreground/80"
-          >
+          <button onClick={copy} className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-foreground/80">
             <Copy className="h-4 w-4" /> {copied ? "Copied!" : "Copy code"}
           </button>
         </div>
@@ -55,18 +55,14 @@ const OtpConfirmation = () => {
       </div>
 
       <div className="sticky bottom-0 left-0 right-0 bg-background border-t border-border screen-pad py-4 space-y-2">
-        <Link
-          to="/customer/broadcast/r1"
-          className="block w-full text-center rounded-2xl bg-accent text-accent-foreground py-4 font-bold"
-        >
-          Wait for rider updates
-        </Link>
-        <Link
-          to="/customer/track/d-r1"
-          className="block w-full text-center rounded-2xl bg-primary text-primary-foreground py-3 font-semibold text-sm"
-        >
-          Track delivery
-        </Link>
+        {req && (
+          <Link
+            to={`/customer/broadcast/${req.route_id}`}
+            className="block w-full text-center rounded-2xl bg-accent text-accent-foreground py-4 font-bold"
+          >
+            Wait for rider updates
+          </Link>
+        )}
         <Link to="/customer" className="block w-full text-center text-sm text-muted-foreground py-2">
           Back to home
         </Link>
