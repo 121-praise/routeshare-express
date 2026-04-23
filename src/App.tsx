@@ -16,6 +16,7 @@ import LiveTracking from "./pages/customer/LiveTracking";
 import DeliveryComplete from "./pages/customer/DeliveryComplete";
 import CustomerHistory from "./pages/customer/CustomerHistory";
 import CustomerBroadcast from "./pages/customer/CustomerBroadcast";
+import RequestPending from "./pages/customer/RequestPending";
 import RiderHome from "./pages/rider/RiderHome";
 import CreateRoute from "./pages/rider/CreateRoute";
 import RiderRoute from "./pages/rider/RiderRoute";
@@ -43,6 +44,7 @@ const App = () => (
           {/* Customer */}
           <Route path="/customer" element={<CustomerHome />} />
           <Route path="/customer/route/:id" element={<JoinRoute />} />
+          <Route path="/customer/pending/:id" element={<RequestPending />} />
           <Route path="/customer/payment/:id" element={<Payment />} />
           <Route path="/customer/otp/:id" element={<OtpConfirmation />} />
           <Route path="/customer/track/:id" element={<LiveTracking />} />
