@@ -1,18 +1,19 @@
 import { useNavigate } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { ScreenHeader } from "@/components/ScreenHeader";
-import { supabase, getMockUser, setMockUser } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import { MapPin, Clock, Package, Bike, Car, Phone, User } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 const CreateRoute = () => {
   const navigate = useNavigate();
-  const u = getMockUser();
+  const { user, profile } = useAuth();
+  const riderName = profile?.name || "";
   const [vehicle, setVehicle] = useState<"Bike" | "Keke" | "Van">("Bike");
   const [capacity, setCapacity] = useState(6);
-  const [riderName, setRiderName] = useState(u.name === "Guest" ? "" : u.name);
-  const [riderPhone, setRiderPhone] = useState(u.phone);
+  const [riderPhone, setRiderPhone] = useState(profile?.phone || "");
   const [pickupArea, setPickupArea] = useState("");
   const [destArea, setDestArea] = useState("");
   const [departure, setDeparture] = useState("");
@@ -21,14 +22,21 @@ const CreateRoute = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast.error("Please log in first");
+      return;
+    }
     if (!riderName || !riderPhone || !pickupArea || !destArea || !departure || !price) {
       toast.error("Please fill all fields");
       return;
     }
     setSubmitting(true);
-    setMockUser({ name: riderName, phone: riderPhone, role: "rider" });
+    // Persist phone if changed
+    if (riderPhone !== profile?.phone) {
+      await supabase.from("profiles").update({ phone: riderPhone }).eq("id", user.id);
+    }
     const { error } = await supabase.from("routes").insert({
-      rider_id: u.id,
+      rider_id: user.id,
       rider_name: riderName,
       rider_phone: riderPhone,
       rider_rating: 5.0,
@@ -53,7 +61,7 @@ const CreateRoute = () => {
     <AppShell hideNav>
       <ScreenHeader title="Create new route" />
       <form onSubmit={submit} className="screen-pad pt-4 pb-32 flex flex-col gap-4">
-        <Field icon={User} label="Your name" value={riderName} onChange={setRiderName} placeholder="Tunde A." />
+        <Field icon={User} label="Your name" value={riderName} onChange={() => {}} placeholder="Tunde A." readOnly />
         <Field icon={Phone} label="Your phone (WhatsApp)" value={riderPhone} onChange={setRiderPhone} placeholder="08012345678" type="tel" />
         <Field icon={MapPin} label="Pickup area" value={pickupArea} onChange={setPickupArea} placeholder="Yaba" />
         <Field icon={MapPin} label="Destination area" value={destArea} onChange={setDestArea} placeholder="Lekki Phase 1" />

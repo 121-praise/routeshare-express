@@ -3,7 +3,8 @@ import { AppShell } from "@/components/AppShell";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { ngn } from "@/lib/mockData";
 import { fetchRoute, fetchRequestsForRoute, RouteRow, slotsTaken } from "@/lib/api";
-import { supabase, getMockUser, setMockUser } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import { MapPin, Phone, Package, Star, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -19,6 +20,7 @@ const JoinRoute = () => {
   const [receiverName, setReceiverName] = useState("");
   const [receiverPhone, setReceiverPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { user, profile } = useAuth();
 
   useEffect(() => {
     if (!id) return;
@@ -49,17 +51,19 @@ const JoinRoute = () => {
       toast.error("No slots left on this route");
       return;
     }
+    if (!user) {
+      toast.error("Please log in first");
+      return;
+    }
     setSubmitting(true);
-    const u = getMockUser();
-    if (u.name === "Guest") setMockUser({ name: senderName });
     const otp = String(Math.floor(1000 + Math.random() * 9000));
     const { data, error } = await supabase
       .from("delivery_requests")
       .insert({
         route_id: route.id,
-        customer_id: u.id,
+        customer_id: user.id,
         customer_name: senderName,
-        customer_phone: u.phone || receiverPhone,
+        customer_phone: profile?.phone || receiverPhone,
         sender_name: senderName,
         receiver_name: receiverName,
         receiver_phone: receiverPhone,

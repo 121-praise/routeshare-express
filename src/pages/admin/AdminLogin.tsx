@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Lock, Bike } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { setAdminLocal } from "@/lib/auth";
+
+const ADMIN_EMAIL = "angeljamgbadi@gmail.com";
+const ADMIN_PASSWORD = "peace2026";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -8,15 +13,16 @@ const AdminLogin = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock credentials — replace with Supabase auth later
-    if (email === "admin@routeshare.ng" && password === "admin123") {
-      sessionStorage.setItem("rs_admin", "1");
-      navigate("/admin");
-    } else {
+    if (email.trim().toLowerCase() !== ADMIN_EMAIL || password !== ADMIN_PASSWORD) {
       setError("Invalid credentials");
+      return;
     }
+    // Try real Supabase sign-in too (works if the admin account exists)
+    await supabase.auth.signInWithPassword({ email, password }).catch(() => {});
+    setAdminLocal(true);
+    navigate("/admin");
   };
 
   return (
@@ -42,7 +48,7 @@ const AdminLogin = () => {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="admin@routeshare.ng"
+          placeholder="admin@example.com"
           className="mt-1 mb-4 w-full rounded-2xl bg-secondary h-12 px-4 outline-none text-sm"
           required
         />
@@ -65,10 +71,6 @@ const AdminLogin = () => {
         >
           <Lock className="h-4 w-4" /> Sign in
         </button>
-
-        <p className="mt-4 text-[11px] text-muted-foreground text-center">
-          Mock login · admin@routeshare.ng / admin123
-        </p>
       </form>
     </div>
   );

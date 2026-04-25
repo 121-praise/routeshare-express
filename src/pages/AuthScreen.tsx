@@ -1,12 +1,17 @@
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ScreenHeader } from "@/components/ScreenHeader";
 import { Mail, Lock, Phone, User } from "lucide-react";
-import { setMockUser } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
+import { setAdminLocal } from "@/lib/auth";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface AuthScreenProps {
   mode: "login" | "signup";
 }
+
+const ADMIN_EMAIL = "angeljamgbadi@gmail.com";
+const ADMIN_PASSWORD = "peace2026";
 
 export const AuthScreen = ({ mode }: AuthScreenProps) => {
   const navigate = useNavigate();
@@ -14,15 +19,63 @@ export const AuthScreen = ({ mode }: AuthScreenProps) => {
   const role = params.get("role") === "rider" ? "rider" : "customer";
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const routeForRole = async (uid: string, fallback: "rider" | "customer") => {
+    const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid).maybeSingle();
+    const r = (data?.role as "admin" | "rider" | "customer" | undefined) ?? fallback;
+    if (r === "admin") return "/admin";
+    return r === "rider" ? "/rider" : "/customer";
+  };
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMockUser({
-      role,
-      ...(name ? { name } : {}),
-      ...(phone ? { phone } : {}),
-    });
-    navigate(role === "rider" ? "/rider" : "/customer");
+    setBusy(true);
+    try {
+      if (mode === "login") {
+        // Hard-coded admin shortcut
+        if (email.trim().toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+          // Try real sign-in first; if it fails, fall back to local admin flag.
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          setAdminLocal(true);
+          if (!error && data.session) {
+            navigate("/admin");
+            return;
+          }
+          // No real account yet — still grant local admin access.
+          navigate("/admin");
+          return;
+        }
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        const dest = await routeForRole(data.user.id, role);
+        navigate(dest);
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/auth/login`,
+            data: { name, phone, role },
+          },
+        });
+        if (error) throw error;
+        if (!data.session) {
+          toast.success("Check your email to verify your account, then log in.");
+          navigate("/auth/login");
+        } else {
+          // Email confirmation disabled in Supabase project — go straight in.
+          navigate(role === "rider" ? "/rider" : "/customer");
+        }
+      }
+    } catch (err: any) {
+      toast.error(err.message ?? "Something went wrong");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -31,16 +84,16 @@ export const AuthScreen = ({ mode }: AuthScreenProps) => {
         <ScreenHeader title={mode === "login" ? "Welcome back" : "Create account"} back />
         <form onSubmit={submit} className="screen-pad pt-4 flex-1 flex flex-col gap-4">
           {mode === "signup" && (
-            <Field icon={User} label="Full name" placeholder="Tunde Adebayo" value={name} onChange={(e) => setName(e.target.value)} />
+            <Field icon={User} label="Full name" placeholder="Tunde Adebayo" value={name} onChange={(e) => setName(e.target.value)} required />
           )}
           {mode === "signup" && (
-            <Field icon={Phone} label="Phone" placeholder="08012345678" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <Field icon={Phone} label="Phone" placeholder="08012345678" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} required />
           )}
-          <Field icon={Mail} label="Email" placeholder="you@email.com" type="email" />
-          <Field icon={Lock} label="Password" placeholder="••••••••" type="password" />
+          <Field icon={Mail} label="Email" placeholder="you@email.com" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <Field icon={Lock} label="Password" placeholder="••••••••" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
 
-          <button type="submit" className="mt-2 rounded-2xl bg-primary text-primary-foreground py-4 font-bold shadow-md">
-            {mode === "login" ? "Log in" : `Continue as ${role}`}
+          <button type="submit" disabled={busy} className="mt-2 rounded-2xl bg-primary text-primary-foreground py-4 font-bold shadow-md disabled:opacity-60">
+            {busy ? "Please wait…" : mode === "login" ? "Log in" : `Continue as ${role}`}
           </button>
 
           <p className="text-center text-sm text-muted-foreground">

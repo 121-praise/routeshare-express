@@ -4,6 +4,7 @@ import { fetchRoutes, RouteRow, slotsTaken, RequestRow, TAKEN_STATUSES } from "@
 import { ngn } from "@/lib/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Zap, Bike, Star, ChevronRight, MapPin, ArrowRight, X } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import { useEffect, useMemo, useState } from "react";
 
 const minsFromNow = (iso: string) => {
@@ -16,10 +17,14 @@ const minsFromNow = (iso: string) => {
 
 const CustomerHome = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [routes, setRoutes] = useState<RouteRow[]>([]);
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [appliedFrom, setAppliedFrom] = useState("");
+  const [appliedTo, setAppliedTo] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
   const [focusField, setFocusField] = useState<"from" | "to" | null>(null);
 
   const load = async () => {
@@ -78,11 +83,18 @@ const CustomerHome = () => {
     () =>
       routes.filter(
         (r) =>
-          (!from.trim() || r.pickup_area.toLowerCase().includes(from.trim().toLowerCase())) &&
-          (!to.trim() || r.destination_area.toLowerCase().includes(to.trim().toLowerCase())),
+          (!appliedFrom.trim() || r.pickup_area.toLowerCase().includes(appliedFrom.trim().toLowerCase())) &&
+          (!appliedTo.trim() || r.destination_area.toLowerCase().includes(appliedTo.trim().toLowerCase())),
       ),
-    [routes, from, to],
+    [routes, appliedFrom, appliedTo],
   );
+
+  const runSearch = () => {
+    setAppliedFrom(from);
+    setAppliedTo(to);
+    setHasSearched(true);
+    setFocusField(null);
+  };
 
   const takenFor = (rid: string) =>
     requests.filter(
@@ -94,10 +106,12 @@ const CustomerHome = () => {
       <header className="screen-pad pt-12 pb-4 bg-gradient-hero text-primary-foreground rounded-b-[32px]">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-white/60 text-xs font-medium">Good afternoon</p>
+            <p className="text-white/60 text-xs font-medium">{profile?.name ? `Hi ${profile.name.split(" ")[0]}` : "Welcome"}</p>
             <h1 className="h-display text-2xl mt-0.5">Where to today?</h1>
           </div>
-          <div className="h-11 w-11 rounded-full bg-accent grid place-items-center font-bold text-accent-foreground">A</div>
+          <div className="h-11 w-11 rounded-full bg-accent grid place-items-center font-bold text-accent-foreground overflow-hidden">
+            {profile?.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : (profile?.name?.[0]?.toUpperCase() ?? "A")}
+          </div>
         </div>
 
         <div className="mt-5 space-y-2">
@@ -123,6 +137,13 @@ const CustomerHome = () => {
           {focusField === "to" && toSugg.length > 0 && (
             <Suggestions items={toSugg} onPick={(v) => { setTo(v); setFocusField(null); }} />
           )}
+          <button
+            type="button"
+            onClick={runSearch}
+            className="w-full mt-1 rounded-2xl bg-accent text-accent-foreground py-3.5 font-bold flex items-center justify-center gap-2 shadow-glow"
+          >
+            <Search className="h-4 w-4" /> Search routes
+          </button>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
@@ -145,7 +166,7 @@ const CustomerHome = () => {
       <section className="screen-pad pt-6 pb-6">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-bold text-base">
-            {from || to ? `Matching routes (${filtered.length})` : "Available routes"}
+            {hasSearched ? `Search results (${filtered.length})` : "Available routes"}
           </h2>
         </div>
 
