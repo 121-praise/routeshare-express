@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
+import { isAdminLocal } from "@/lib/auth";
 
 export const AdminGuard = ({ children }: { children: React.ReactNode }) => {
-  const authed = typeof window !== "undefined" && sessionStorage.getItem("rs_admin") === "1";
-  if (!authed) return <Navigate to="/admin/login" replace />;
+  if (!isAdminLocal()) return <Navigate to="/admin/login" replace />;
   return <>{children}</>;
 };

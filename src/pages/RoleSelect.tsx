@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ScreenHeader } from "@/components/ScreenHeader";
-import { Package, Bike, ChevronRight, ShieldCheck } from "lucide-react";
+import { Package, Bike, ChevronRight } from "lucide-react";
 
 const RoleSelect = () => {
   const roles = [
@@ -48,14 +48,6 @@ const RoleSelect = () => {
               </div>
             </Link>
           ))}
-
-          <Link
-            to="/admin"
-            className="mt-2 rounded-2xl border border-dashed border-border p-4 flex items-center gap-3 text-sm text-muted-foreground hover:bg-secondary/60 transition-colors"
-          >
-            <ShieldCheck className="h-4 w-4" />
-            Open admin dashboard (preview)
-          </Link>
         </div>
       </div>
     </div>
