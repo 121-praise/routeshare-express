@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { ngn } from "@/lib/mockData";
 import { fetchRoutes, RouteRow, RequestRow, slotsTaken } from "@/lib/api";
-import { supabase, getMockUser } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
 import { Plus, Bell, TrendingUp, Package, ChevronRight, MapPin } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -15,13 +16,14 @@ const minsFromNow = (iso: string) => {
 };
 
 const RiderHome = () => {
-  const u = getMockUser();
+  const { user, profile } = useAuth();
   const [routes, setRoutes] = useState<RouteRow[]>([]);
   const [reqs, setReqs] = useState<RequestRow[]>([]);
 
   const load = async () => {
+    if (!user) { setRoutes([]); setReqs([]); return; }
     const all = await fetchRoutes();
-    const mine = all.filter((r) => r.rider_id === u.id);
+    const mine = all.filter((r) => r.rider_id === user.id);
     setRoutes(mine);
     if (mine.length) {
       const { data } = await supabase
@@ -42,7 +44,8 @@ const RiderHome = () => {
       .on("postgres_changes", { event: "*", schema: "public", table: "delivery_requests" }, load)
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const pendingCount = reqs.filter((r) => r.status === "pending").length;
   const paidCount = reqs.filter((r) => r.status === "paid").length;
@@ -53,7 +56,7 @@ const RiderHome = () => {
       <header className="screen-pad pt-12 pb-5 bg-gradient-hero text-primary-foreground rounded-b-[32px]">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-white/60 text-xs">Hi {u.name}</p>
+            <p className="text-white/60 text-xs">Hi {profile?.name || "rider"}</p>
             <h1 className="h-display text-2xl">Today's trips</h1>
           </div>
           <button className="relative h-11 w-11 rounded-full bg-white/10 grid place-items-center">
