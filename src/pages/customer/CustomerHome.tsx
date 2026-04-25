@@ -4,6 +4,7 @@ import { fetchRoutes, RouteRow, slotsTaken, RequestRow, TAKEN_STATUSES } from "@
 import { ngn } from "@/lib/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Zap, Bike, Star, ChevronRight, MapPin, ArrowRight, X } from "lucide-react";
+import { useAuth } from "@/lib/auth";
 import { useEffect, useMemo, useState } from "react";
 
 const minsFromNow = (iso: string) => {
@@ -16,10 +17,14 @@ const minsFromNow = (iso: string) => {
 
 const CustomerHome = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [routes, setRoutes] = useState<RouteRow[]>([]);
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [appliedFrom, setAppliedFrom] = useState("");
+  const [appliedTo, setAppliedTo] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
   const [focusField, setFocusField] = useState<"from" | "to" | null>(null);
 
   const load = async () => {
@@ -78,11 +83,18 @@ const CustomerHome = () => {
     () =>
       routes.filter(
         (r) =>
-          (!from.trim() || r.pickup_area.toLowerCase().includes(from.trim().toLowerCase())) &&
-          (!to.trim() || r.destination_area.toLowerCase().includes(to.trim().toLowerCase())),
+          (!appliedFrom.trim() || r.pickup_area.toLowerCase().includes(appliedFrom.trim().toLowerCase())) &&
+          (!appliedTo.trim() || r.destination_area.toLowerCase().includes(appliedTo.trim().toLowerCase())),
       ),
-    [routes, from, to],
+    [routes, appliedFrom, appliedTo],
   );
+
+  const runSearch = () => {
+    setAppliedFrom(from);
+    setAppliedTo(to);
+    setHasSearched(true);
+    setFocusField(null);
+  };
 
   const takenFor = (rid: string) =>
     requests.filter(
