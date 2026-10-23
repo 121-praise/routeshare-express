@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { CallSession } from "@/lib/moving";
+import type { CallSession } from "@/lib/moving";
 
 /**
  * Real peer-to-peer voice calling over WebRTC.
@@ -36,25 +36,27 @@ export function useCallEngine(session: CallSession | null, isCaller: boolean): C
   const channelRef = useRef<any>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const endedRef = useRef(false);
+  const answeredRef = useRef(false);
+  const offerRetryRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const cleanup = (markFailed = false) => {
+  const cleanup = () => {
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = null;
+    if (offerRetryRef.current) clearInterval(offerRetryRef.current);
+    offerRetryRef.current = null;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     try { pcRef.current?.close(); } catch { /* noop */ }
     pcRef.current = null;
     if (channelRef.current) supabase.removeChannel(channelRef.current);
     channelRef.current = null;
-    if (markFailed && !endedRef.current) {
-      setStatus((s) => (s === "ended" ? s : "failed"));
-    }
   };
 
-  // Main lifecycle
   useEffect(() => {
     if (!session) return;
     endedRef.current = false;
+    answeredRef.current = false;
     const channelId = `call-${session.id}`;
     let pc: RTCPeerConnection | null = null;
 
@@ -62,23 +64,22 @@ export function useCallEngine(session: CallSession | null, isCaller: boolean): C
       channelRef.current?.send({ type: "broadcast", event, payload });
     };
 
-    const setupPeer = async () => {
+    const setupPeer = async (): Promise<boolean> => {
       setStatus("connecting");
       try {
         streamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
       } catch {
-        setError("Microphone permission is required for calls. Allow mic access and try again.");
+        setError("Microphone access is needed for calls. Allow mic permission and try again.");
         setStatus("failed");
         cleanup();
         return false;
       }
       pc = new RTCPeerConnection(RTC_CONFIG);
       pcRef.current = pc;
-      streamRef.current!.getAudioTracks().forEach((t) => pc!.addTrack(t, streamRef.current!));
+      streamRef.current.getAudioTracks().forEach((t) => pc!.addTrack(t, streamRef.current!));
       pc.onicecandidate = (e) => {
         if (e.candidate) send("ice", e.candidate.toJSON());
       };
-      pc.ontrack = () => { /* audio plays via the <audio> element */ };
       pc.onconnectionstatechange = () => {
         if (pc?.connectionState === "connected") {
           setStatus("active");
@@ -86,7 +87,7 @@ export function useCallEngine(session: CallSession | null, isCaller: boolean): C
             timerRef.current = setInterval(() => setDurationSec((d) => d + 1), 1000);
           }
         } else if (pc?.connectionState === "failed") {
-          setError("Connection failed. You may be on a restricted network — try again.");
+          setError("Connection failed — you may be on a restricted network. Try again.");
           setStatus("failed");
         }
       };
@@ -103,6 +104,7 @@ export function useCallEngine(session: CallSession | null, isCaller: boolean): C
       })
       .on("broadcast", { event: "answer" }, async ({ payload }: any) => {
         if (!isCaller || !pcRef.current) return;
+        answeredRef.current = true;
         if (pcRef.current.signalingState === "have-local-offer") {
           await pcRef.current.setRemoteDescription(new RTCSessionDescription(payload));
         }
@@ -119,26 +121,49 @@ export function useCallEngine(session: CallSession | null, isCaller: boolean): C
 
     channelRef.current = channel;
 
-    if (isCaller) {
-      // Caller creates the offer once both peers are in the channel.
-      const t = setTimeout(async () => {
-        const ok = await setupPeer();
-        if (!ok) return;
+    const t = setTimeout(async () => {
+      const ok = await setupPeer();
+      if (!ok) return;
+      if (isCaller) {
+        // Send the offer and retry until the callee answers, so slow
+        // accepters that join the channel late still get connected.
         const offer = await pc!.createOffer();
         await pc!.setLocalDescription(offer);
-        send("offer", offer);
+        const tryOffer = () => {
+          if (answeredRef.current || endedRef.current) {
+            if (offerRetryRef.current) clearInterval(offerRetryRef.current);
+            offerRetryRef.current = null;
+            return;
+          }
+          send("offer", offer);
+        };
         setStatus("ringing");
-      }, 1500);
-      return () => { clearTimeout(t); cleanup(); };
-    } else {
-      const t = setTimeout(async () => {
-        const ok = await setupPeer();
-        if (!ok) return;
+        tryOffer();
+        offerRetryRef.current = setInterval(tryOffer, 2000);
+      } else {
         setStatus("ringing"); // waiting for the caller's offer
-      }, 800);
-      return () => { clearTimeout(t); cleanup(); };
-    }
+      }
+    }, 1000);
+
+    return () => { clearTimeout(t); cleanup(); };
   }, [session?.id, isCaller]);
+
+  // Play incoming remote audio.
+  useEffect(() => {
+    const iv = setInterval(() => {
+      if (audioRef.current) return;
+      const track = pcRef.current?.getReceivers().find((r) => r.track?.kind === "audio")?.track;
+      if (track) {
+        const ms = new MediaStream([track]);
+        const a = new Audio();
+        a.srcObject = ms;
+        a.autoplay = true;
+        a.play().catch(() => { /* autoplay guard */ });
+        audioRef.current = a;
+      }
+    }, 500);
+    return () => clearInterval(iv);
+  }, []);
 
   const mute = () => {
     streamRef.current?.getAudioTracks().forEach((t) => (t.enabled = false));
@@ -155,23 +180,6 @@ export function useCallEngine(session: CallSession | null, isCaller: boolean): C
     channelRef.current?.send({ type: "broadcast", event: "end", payload: {} });
     cleanup();
   };
-
-  // Play incoming audio
-  useEffect(() => {
-    let audio: HTMLAudioElement | null = null;
-    const attach = () => {
-      const track = pcRef.current?.getReceivers().find((r) => r.track?.kind === "audio")?.track;
-      if (track && !audio) {
-        const ms = new MediaStream([track]);
-        audio = new Audio();
-        audio.srcObject = ms;
-        audio.autoplay = true;
-        audio.play().catch(() => { /* autoplay guard */ });
-      }
-    };
-    const iv = setInterval(attach, 500);
-    return () => clearInterval(iv);
-  }, [status]);
 
   return { status, error, muted, durationSec, mute, unmute, hangUp };
 }
