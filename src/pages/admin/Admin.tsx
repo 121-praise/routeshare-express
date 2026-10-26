@@ -65,6 +65,7 @@ const Admin = () => {
               { icon: LayoutDashboard, label: "Overview", active: true },
               { icon: Users, label: "Users" },
               { icon: Bike, label: "Riders" },
+              { icon: Truck, label: "Movers", active: false },
               { icon: Package, label: "Routes" },
               { icon: AlertTriangle, label: "Disputes" },
               { icon: Settings, label: "Settings" },
@@ -110,6 +111,60 @@ const Admin = () => {
               </div>
             ))}
           </div>
+
+          <section className="rounded-3xl bg-card border border-border p-5 mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold">Mover verifications</h2>
+              <span className="pill bg-warning/20 text-foreground">
+                {movers.filter((m) => m.status === "pending").length} pending
+              </span>
+            </div>
+            {loadingMovers && <p className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading movers…</p>}
+            {!loadingMovers && movers.length === 0 && (
+              <p className="text-sm text-muted-foreground">No mover applications yet.</p>
+            )}
+            <div className="divide-y divide-border">
+              {movers.map((m) => (
+                <div key={m.id} className="flex items-center gap-3 py-3 flex-wrap">
+                  <div className="h-9 w-9 rounded-2xl bg-secondary grid place-items-center">
+                    <Truck className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-[180px]">
+                    <p className="text-sm font-semibold capitalize">{m.vehicle_type ?? "vehicle"} · {m.vehicle_make} {m.vehicle_model}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {m.service_areas.join(", ") || "No areas"} · {m.item_categories.join(", ") || "No categories"}
+                    </p>
+                  </div>
+                  <span className={`pill ${
+                    m.status === "approved" ? "bg-success/15 text-success" :
+                    m.status === "pending" ? "bg-warning/20 text-foreground" : "bg-destructive/15 text-destructive"
+                  }`}>
+                    {m.status}
+                  </span>
+                  <div className="flex gap-2">
+                    {m.status !== "approved" && (
+                      <button
+                        onClick={() => setMoverStatus(m.id, "approved")}
+                        disabled={busyId === m.id}
+                        className="rounded-xl bg-success/15 text-success px-3 py-1.5 text-xs font-bold flex items-center gap-1"
+                      >
+                        {busyId === m.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} Approve
+                      </button>
+                    )}
+                    {m.status !== "rejected" && (
+                      <button
+                        onClick={() => setMoverStatus(m.id, "rejected")}
+                        disabled={busyId === m.id}
+                        className="rounded-xl bg-destructive/10 text-destructive px-3 py-1.5 text-xs font-bold flex items-center gap-1"
+                      >
+                        <XCircle className="h-3.5 w-3.5" /> Reject
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
 
           <div className="grid lg:grid-cols-3 gap-4 mt-6">
             <section className="lg:col-span-2 rounded-3xl bg-card border border-border p-5">
