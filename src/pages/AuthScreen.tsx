@@ -16,7 +16,9 @@ const ADMIN_PASSWORD = "pop111";
 export const AuthScreen = ({ mode }: AuthScreenProps) => {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const role = params.get("role") === "rider" ? "rider" : "customer";
+  const roleParam = params.get("role");
+  const role: "customer" | "rider" | "mover" =
+    roleParam === "rider" ? "rider" : roleParam === "mover" ? "mover" : "customer";
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");

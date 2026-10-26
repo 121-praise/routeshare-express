@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 
-const Profile = ({ role }: { role: "customer" | "rider" }) => {
+const Profile = ({ role }: { role: "customer" | "rider" | "mover" }) => {
   const { user, profile, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
