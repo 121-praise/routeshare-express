@@ -11,7 +11,7 @@ interface AuthScreenProps {
 }
 
 const ADMIN_EMAIL = "angeljamgbadi@gmail.com";
-const ADMIN_PASSWORD = "peace2026";
+const ADMIN_PASSWORD = "pop111";
 
 export const AuthScreen = ({ mode }: AuthScreenProps) => {
   const navigate = useNavigate();
@@ -25,8 +25,9 @@ export const AuthScreen = ({ mode }: AuthScreenProps) => {
 
   const routeForRole = async (uid: string, fallback: "rider" | "customer") => {
     const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid).maybeSingle();
-    const r = (data?.role as "admin" | "rider" | "customer" | undefined) ?? fallback;
+    const r = (data?.role as "admin" | "rider" | "customer" | "mover" | undefined) ?? fallback;
     if (r === "admin") return "/admin";
+    if (r === "mover") return "/mover";
     return r === "rider" ? "/rider" : "/customer";
   };
 
@@ -67,8 +68,8 @@ export const AuthScreen = ({ mode }: AuthScreenProps) => {
           toast.success("Check your email to verify your account, then log in.");
           navigate("/auth/login");
         } else {
-          // Email confirmation disabled in Supabase project — go straight in.
-          navigate(role === "rider" ? "/rider" : "/customer");
+        // Email confirmation disabled in Supabase project — go straight in.
+        navigate(role === "rider" ? "/rider" : role === "mover" ? "/mover" : "/customer");
         }
       }
     } catch (err: any) {
