@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Package, MapPin, User } from "lucide-react";
+import { Home, Package, MapPin, User, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Item { to: string; label: string; icon: React.ComponentType<{ className?: string }>; }
@@ -16,10 +16,17 @@ const riderItems: Item[] = [
   { to: "/rider/profile", label: "Profile", icon: User },
 ];
 
+const moverItems: Item[] = [
+  { to: "/mover", label: "Jobs", icon: Truck },
+  { to: "/mover/earnings", label: "Earnings", icon: Package },
+  { to: "/mover/profile", label: "Profile", icon: User },
+];
+
 export const BottomNav = () => {
   const { pathname } = useLocation();
   const isRider = pathname.startsWith("/rider");
-  const items = isRider ? riderItems : customerItems;
+  const isMover = pathname.startsWith("/mover");
+  const items = isMover ? moverItems : isRider ? riderItems : customerItems;
 
   return (
     <nav className="sticky bottom-0 left-0 right-0 z-30 border-t border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
