@@ -67,7 +67,7 @@ const CallScreen = () => {
         </button>
         <button
           onClick={() => { engine.hangUp(); navigate(-1); }}
-          className="h-18 w-18 p-5 rounded-full bg-destructive grid place-items-center"
+          className="h-16 w-16 rounded-full bg-destructive grid place-items-center"
           aria-label="End call"
         >
           <PhoneOff className="h-7 w-7 text-destructive-foreground" />
