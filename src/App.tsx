@@ -28,6 +28,17 @@ import Earnings from "./pages/rider/Earnings";
 import Admin from "./pages/admin/Admin";
 import AdminLogin from "./pages/admin/AdminLogin";
 import { AdminGuard } from "./pages/admin/AdminGuard";
+import MoverHome from "./pages/mover/MoverHome";
+import MoverOnboarding from "./pages/mover/MoverOnboarding";
+import MoverRequests from "./pages/mover/MoverRequests";
+import MoverJob from "./pages/mover/MoverJob";
+import MoverEarnings from "./pages/mover/MoverEarnings";
+import MovingHome from "./pages/customer/MovingHome";
+import MovingRequestForm from "./pages/customer/MovingRequestForm";
+import MovingDetail from "./pages/customer/MovingDetail";
+import MovingChat from "./pages/MovingChat";
+import CallScreen from "./pages/CallScreen";
+import IncomingCallWatcher from "./components/IncomingCallWatcher";
 
 const queryClient = new QueryClient();
 
@@ -73,9 +84,29 @@ const App = () => (
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminGuard><Admin /></AdminGuard>} />
 
+            {/* Mover */}
+            <Route path="/mover" element={<MoverHome />} />
+            <Route path="/mover/onboard" element={<MoverOnboarding />} />
+            <Route path="/mover/requests" element={<MoverRequests />} />
+            <Route path="/mover/job/:id" element={<MoverJob />} />
+            <Route path="/mover/earnings" element={<MoverEarnings />} />
+            <Route path="/mover/profile" element={<Profile role="mover" />} />
+            <Route path="/mover/payment-methods" element={<PaymentMethods role="mover" />} />
+            <Route path="/mover/payment-methods/add" element={<AddCard role="mover" />} />
+
+            {/* Moving services (customer) */}
+            <Route path="/customer/moving" element={<MovingHome />} />
+            <Route path="/customer/moving/new" element={<MovingRequestForm />} />
+            <Route path="/customer/moving/:id" element={<MovingDetail />} />
+
+            {/* Shared booking chat + in-app calls */}
+            <Route path="/moving-chat/:bookingId" element={<MovingChat />} />
+            <Route path="/call/:sessionId" element={<CallScreen />} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
+        <IncomingCallWatcher />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { ScreenHeader } from "@/components/ScreenHeader";
-import { Package, Bike, ChevronRight } from "lucide-react";
+import { Package, Bike, Truck, ChevronRight } from "lucide-react";
 
 const RoleSelect = () => {
   const roles = [
@@ -17,6 +17,13 @@ const RoleSelect = () => {
       desc: "Create routes and earn from shared deliveries.",
       icon: Bike,
       tag: "Rider",
+    },
+    {
+      to: "/auth/signup?role=mover",
+      title: "I'm a mover",
+      desc: "Use your car, van or truck to move furniture, appliances and full loads.",
+      icon: Truck,
+      tag: "Mover",
     },
   ];
 

@@ -120,7 +120,7 @@ const MoverOnboarding = () => {
 
   return (
     <AppShell hideNav>
-      <ScreenHeader title="Mover verification" subtitle="Step " + "" />
+      <ScreenHeader title="Mover verification" subtitle="One-time setup — takes about 5 minutes" />
       <div className="screen-pad pt-4 pb-32 flex-1 flex flex-col gap-4">
         {statusBanner}
 
