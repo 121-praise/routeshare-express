@@ -1,8 +1,47 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { ngn } from "@/lib/mockData";
-import { LayoutDashboard, Users, Bike, AlertTriangle, TrendingUp, Activity, Package, ChevronRight, Settings } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { MoverProfile } from "@/lib/moving";
+import { LayoutDashboard, Users, Bike, Truck, AlertTriangle, TrendingUp, Activity, Package, ChevronRight, Settings, ShieldCheck, XCircle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const Admin = () => {
+  const [movers, setMovers] = useState<MoverProfile[]>([]);
+  const [loadingMovers, setLoadingMovers] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("mover_profiles")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        setMovers((data ?? []) as MoverProfile[]);
+        setLoadingMovers(false);
+      });
+  }, []);
+
+  const setMoverStatus = async (id: string, status: "approved" | "rejected" | "suspended") => {
+    const reason = status === "rejected" ? (prompt("Reason for rejection:") ?? "") : "";
+    setBusyId(id);
+    const { error } = await supabase
+      .from("mover_profiles")
+      .update({ status, rejection_reason: reason })
+      .eq("id", id);
+    setBusyId(null);
+    if (error) {
+      toast.error(
+        error.message.includes("permission")
+          ? "Admin role needed in the database — run the promote-admin snippet in migration 0002b"
+          : error.message,
+      );
+      return;
+    }
+    setMovers((ms) => ms.map((m) => (m.id === id ? { ...m, status } : m)));
+    toast.success(`Mover ${status}`);
+  };
+
   const stats = [
     { label: "Active routes", value: "47", change: "+12%", icon: Activity },
     { label: "Today's revenue", value: ngn(842500), change: "+8%", icon: TrendingUp },
