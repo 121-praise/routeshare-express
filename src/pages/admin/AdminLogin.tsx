@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { setAdminLocal } from "@/lib/auth";
 
 const ADMIN_EMAIL = "angeljamgbadi@gmail.com";
-const ADMIN_PASSWORD = "peace2026";
+const ADMIN_PASSWORD = "pop111";
 
 const AdminLogin = () => {
   const navigate = useNavigate();

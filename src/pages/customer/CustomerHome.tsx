@@ -3,7 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { fetchRoutes, RouteRow, slotsTaken, RequestRow, TAKEN_STATUSES } from "@/lib/api";
 import { ngn } from "@/lib/mockData";
 import { supabase } from "@/integrations/supabase/client";
-import { Search, Zap, Bike, Star, ChevronRight, MapPin, ArrowRight, X } from "lucide-react";
+import { Search, Truck, Bike, Star, ChevronRight, MapPin, ArrowRight, X } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useEffect, useMemo, useState } from "react";
 
@@ -147,14 +147,11 @@ const CustomerHome = () => {
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <button
-            onClick={() => alert("Instant delivery coming soon")}
-            className="rounded-2xl bg-accent text-accent-foreground p-4 flex flex-col gap-1 text-left"
-          >
-            <Zap className="h-5 w-5" />
-            <span className="font-bold mt-1">Instant delivery</span>
-            <span className="text-xs opacity-80">Send now, dedicated rider</span>
-          </button>
+          <Link to="/customer/moving" className="rounded-2xl bg-accent text-accent-foreground p-4 flex flex-col gap-1 text-left">
+            <Truck className="h-5 w-5" />
+            <span className="font-bold mt-1">Moving services</span>
+            <span className="text-xs opacity-80">Furniture, appliances, full loads</span>
+          </Link>
           <div className="rounded-2xl bg-white/10 border border-white/15 p-4 flex flex-col gap-1">
             <Bike className="h-5 w-5" />
             <span className="font-bold mt-1">Shared route</span>

@@ -105,8 +105,8 @@ const App = () => (
 
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <IncomingCallWatcher />
         </AuthProvider>
-        <IncomingCallWatcher />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

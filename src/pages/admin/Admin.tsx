@@ -1,8 +1,47 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { ngn } from "@/lib/mockData";
-import { LayoutDashboard, Users, Bike, AlertTriangle, TrendingUp, Activity, Package, ChevronRight, Settings } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { MoverProfile } from "@/lib/moving";
+import { LayoutDashboard, Users, Bike, Truck, AlertTriangle, TrendingUp, Activity, Package, ChevronRight, Settings, ShieldCheck, XCircle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 const Admin = () => {
+  const [movers, setMovers] = useState<MoverProfile[]>([]);
+  const [loadingMovers, setLoadingMovers] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("mover_profiles")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        setMovers((data ?? []) as MoverProfile[]);
+        setLoadingMovers(false);
+      });
+  }, []);
+
+  const setMoverStatus = async (id: string, status: "approved" | "rejected" | "suspended") => {
+    const reason = status === "rejected" ? (prompt("Reason for rejection:") ?? "") : "";
+    setBusyId(id);
+    const { error } = await supabase
+      .from("mover_profiles")
+      .update({ status, rejection_reason: reason })
+      .eq("id", id);
+    setBusyId(null);
+    if (error) {
+      toast.error(
+        error.message.includes("permission")
+          ? "Admin role needed in the database — run the promote-admin snippet in migration 0002b"
+          : error.message,
+      );
+      return;
+    }
+    setMovers((ms) => ms.map((m) => (m.id === id ? { ...m, status } : m)));
+    toast.success(`Mover ${status}`);
+  };
+
   const stats = [
     { label: "Active routes", value: "47", change: "+12%", icon: Activity },
     { label: "Today's revenue", value: ngn(842500), change: "+8%", icon: TrendingUp },
@@ -26,6 +65,7 @@ const Admin = () => {
               { icon: LayoutDashboard, label: "Overview", active: true },
               { icon: Users, label: "Users" },
               { icon: Bike, label: "Riders" },
+              { icon: Truck, label: "Movers", active: false },
               { icon: Package, label: "Routes" },
               { icon: AlertTriangle, label: "Disputes" },
               { icon: Settings, label: "Settings" },
@@ -71,6 +111,60 @@ const Admin = () => {
               </div>
             ))}
           </div>
+
+          <section className="rounded-3xl bg-card border border-border p-5 mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold">Mover verifications</h2>
+              <span className="pill bg-warning/20 text-foreground">
+                {movers.filter((m) => m.status === "pending").length} pending
+              </span>
+            </div>
+            {loadingMovers && <p className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" /> Loading movers…</p>}
+            {!loadingMovers && movers.length === 0 && (
+              <p className="text-sm text-muted-foreground">No mover applications yet.</p>
+            )}
+            <div className="divide-y divide-border">
+              {movers.map((m) => (
+                <div key={m.id} className="flex items-center gap-3 py-3 flex-wrap">
+                  <div className="h-9 w-9 rounded-2xl bg-secondary grid place-items-center">
+                    <Truck className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-[180px]">
+                    <p className="text-sm font-semibold capitalize">{m.vehicle_type ?? "vehicle"} · {m.vehicle_make} {m.vehicle_model}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {m.service_areas.join(", ") || "No areas"} · {m.item_categories.join(", ") || "No categories"}
+                    </p>
+                  </div>
+                  <span className={`pill ${
+                    m.status === "approved" ? "bg-success/15 text-success" :
+                    m.status === "pending" ? "bg-warning/20 text-foreground" : "bg-destructive/15 text-destructive"
+                  }`}>
+                    {m.status}
+                  </span>
+                  <div className="flex gap-2">
+                    {m.status !== "approved" && (
+                      <button
+                        onClick={() => setMoverStatus(m.id, "approved")}
+                        disabled={busyId === m.id}
+                        className="rounded-xl bg-success/15 text-success px-3 py-1.5 text-xs font-bold flex items-center gap-1"
+                      >
+                        {busyId === m.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />} Approve
+                      </button>
+                    )}
+                    {m.status !== "rejected" && (
+                      <button
+                        onClick={() => setMoverStatus(m.id, "rejected")}
+                        disabled={busyId === m.id}
+                        className="rounded-xl bg-destructive/10 text-destructive px-3 py-1.5 text-xs font-bold flex items-center gap-1"
+                      >
+                        <XCircle className="h-3.5 w-3.5" /> Reject
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
 
           <div className="grid lg:grid-cols-3 gap-4 mt-6">
             <section className="lg:col-span-2 rounded-3xl bg-card border border-border p-5">
